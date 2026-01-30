@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🧹 Excel Data Sanitisation Tool")
+st.title("🧹MANISH SINGH - Excel Data Sanitisation Tool")
 
 st.markdown("""
 Upload:
