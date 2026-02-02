@@ -1,13 +1,15 @@
 import streamlit as st
 import pandas as pd
 from sanitizer import sanitize_data
+from io import BytesIO
+
 
 st.set_page_config(
     page_title="Excel Data Sanitisation Tool",
     layout="wide"
 )
 
-st.title("🧹MANISH SINGH - Excel Data Sanitisation Tool")
+st.title("🧹 MANISH SINGH – Excel Data Sanitisation Tool")
 
 st.markdown("""
 Upload:
@@ -38,22 +40,34 @@ if data_file and range_file:
     st.dataframe(ranges)
 
     if st.button("Run Data Sanitisation"):
-        clean_data, bad_data = sanitize_data(data, ranges)
+        try:
+            clean_data, bad_data = sanitize_data(data, ranges)
 
-        st.subheader("✅ Clean Data (Safe for Deployment)")
-        st.dataframe(clean_data)
+            st.subheader("✅ Clean Data (Safe for Deployment)")
+            st.dataframe(clean_data)
 
-        st.subheader("❌ Bad Data (Out of Range / Invalid)")
-        st.dataframe(bad_data)
+            st.subheader("❌ Bad Data (Out of Range / Invalid)")
+            st.dataframe(bad_data)
 
-        st.download_button(
-            "Download Clean Data (Excel)",
-            clean_data.to_excel(index=False),
-            file_name="clean_data.xlsx"
-        )
+            # -------------------------------
+            # Download helpers
+            # -------------------------------
+            def to_excel(df):
+                output = BytesIO()
+                df.to_excel(output, index=False)
+                return output.getvalue()
 
-        st.download_button(
-            "Download Bad Data Report (Excel)",
-            bad_data.to_excel(index=False),
-            file_name="bad_data.xlsx"
-        )
+            st.download_button(
+                "Download Clean Data (Excel)",
+                to_excel(clean_data),
+                file_name="clean_data.xlsx"
+            )
+
+            st.download_button(
+                "Download Bad Data Report (Excel)",
+                to_excel(bad_data),
+                file_name="bad_data.xlsx"
+            )
+
+        except Exception as e:
+            st.error(f"❌ Sanitisation failed: {e}")
