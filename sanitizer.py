@@ -1,24 +1,62 @@
 import pandas as pd
 
+
 def sanitize_data(data: pd.DataFrame, ranges: pd.DataFrame):
     """
     Sanitise data based on parameter min/max ranges.
     Rows with any invalid value are flagged as bad data.
     """
 
-    range_map = {
-        row["parameter"]: (row["min"], row["max"])
-        for _, row in ranges.iterrows()
-    }
+    # ===============================
+    # NORMALIZE RANGE COLUMNS
+    # ===============================
+    ranges = ranges.copy()
+    ranges.columns = (
+        ranges.columns
+        .astype(str)
+        .str.strip()
+        .str.lower()
+    )
 
+    required_cols = {"parameter", "min", "max"}
+    missing = required_cols - set(ranges.columns)
+
+    if missing:
+        raise ValueError(
+            f"Range file missing required columns: {missing}. "
+            f"Expected columns: parameter, min, max"
+        )
+
+    # ===============================
+    # BUILD RANGE MAP
+    # ===============================
+    range_map = {}
+
+    for _, r in ranges.iterrows():
+        param = str(r["parameter"]).strip()
+
+        if param == "" or pd.isna(param):
+            continue
+
+        try:
+            min_val = float(r["min"])
+            max_val = float(r["max"])
+        except Exception:
+            continue  # skip invalid range rows safely
+
+        range_map[param] = (min_val, max_val)
+
+    # ===============================
+    # SANITIZE DATA
+    # ===============================
     clean_rows = []
     bad_rows = []
 
-    for idx, row in data.iterrows():
+    for _, row in data.iterrows():
         row_issues = []
 
         for param, (min_val, max_val) in range_map.items():
-            if param not in row:
+            if param not in data.columns:
                 row_issues.append(f"{param}: column missing")
                 continue
 
